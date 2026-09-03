@@ -13,15 +13,16 @@ export function NavBar() {
   const pathname = usePathname();
 
   return (
-    <header className="border-b border-zinc-200 dark:border-zinc-800">
-      <nav className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
+    <header className="border-b border-black/15 bg-[var(--paper)]">
+      <nav className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4 sm:px-8">
         <Link
           href="/"
-          className="font-semibold text-zinc-900 dark:text-zinc-50"
+          className="group flex items-center gap-2 font-semibold tracking-tight text-zinc-950"
         >
-          die·der·das
+          <span className="flex h-7 w-7 items-center justify-center bg-[var(--accent)] text-xs font-bold transition-transform group-hover:-rotate-6">d·d·d</span>
+          <span>die·der·das</span>
         </Link>
-        <ul className="flex gap-1">
+        <ul className="flex items-center gap-1">
           {LINKS.map((link) => {
             const isActive =
               link.href === "/"
@@ -33,8 +34,8 @@ export function NavBar() {
                   href={link.href}
                   className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                     isActive
-                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                      : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                      ? "bg-zinc-950 text-white"
+                      : "text-zinc-600 hover:bg-black/5"
                   }`}
                 >
                   {link.label}

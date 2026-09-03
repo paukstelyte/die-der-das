@@ -26,10 +26,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-50">
+      <body className="flex min-h-full flex-col text-zinc-900">
         <FlashcardsProvider>
           <NavBar />
-          <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
+          <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-8 sm:px-8 sm:py-12">
             {children}
           </main>
         </FlashcardsProvider>

@@ -134,19 +134,21 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="grid gap-6 lg:grid-cols-[260px_1fr] lg:items-start">
-      <aside className="flex flex-col gap-4">
+    <div className="flex flex-col gap-10">
+      <div className="grid gap-10 lg:grid-cols-[240px_1fr] lg:items-start">
+      <aside className="flex flex-col gap-5 lg:pt-3">
         <div>
-          <h1 className="text-xl font-semibold">die · der · das</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <div className="mb-5 h-2 w-12 bg-[var(--accent)]" />
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">German article practice / 01</p>
+          <h1 className="mt-3 text-4xl font-bold leading-none tracking-[-0.06em] sm:text-5xl">die · der · das</h1>
+          <p className="mt-4 text-sm leading-6 text-zinc-600">
             Learn German noun articles and the rules behind them.
           </p>
         </div>
 
-        <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <h2 className="text-sm font-semibold">How to use</h2>
-          <ul className="mt-2 list-disc space-y-1.5 pl-4 text-xs text-zinc-600 dark:text-zinc-400">
+        <div className="border-t border-black/15 pt-4">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">How to use</h2>
+          <ul className="mt-3 list-disc space-y-2 pl-4 text-xs leading-5 text-zinc-600">
             <li>Guess der, die, or das, then click the card to flip it.</li>
             <li>
               After {ROUND_SIZE} cards, choose to learn from your mistakes or
@@ -160,7 +162,7 @@ export default function Home() {
 
         <Link
           href="/cards"
-          className="inline-flex items-center justify-center rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="inline-flex items-center justify-center self-start border-b border-zinc-900 pb-1 text-sm font-medium text-zinc-900 transition-colors hover:border-[var(--accent-deep)] hover:text-[var(--accent-deep)]"
         >
           Add your own cards
         </Link>
@@ -175,7 +177,7 @@ export default function Home() {
             actionLabel="Add a flashcard"
           />
         ) : !queue || effectiveIndex >= queue.length ? (
-          <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-zinc-200 p-8 text-center dark:border-zinc-800">
+          <div className="flex flex-col items-center justify-center gap-4 border border-black/15 bg-[var(--paper)] p-8 text-center shadow-[8px_8px_0_var(--accent)]">
             <h2 className="text-xl font-semibold">
               {isRecap ? "Recap complete!" : "Round complete!"}
             </h2>
@@ -225,7 +227,7 @@ export default function Home() {
       </div>
       </div>
 
-      <section className="grid grid-cols-3 gap-3">
+      <section className="grid grid-cols-3 gap-px border border-black/15 bg-black/15">
         <Stat label="Decks played" value={decksPlayed} />
         <Stat label="Mistakes learned" value={mistakesLearned} />
         <Stat
@@ -243,9 +245,9 @@ export default function Home() {
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-xl border border-zinc-200 p-4 text-center dark:border-zinc-800">
-      <div className="text-2xl font-semibold">{value}</div>
-      <div className="text-xs text-zinc-500 dark:text-zinc-400">{label}</div>
+    <div className="bg-[var(--paper)] p-4 text-center">
+      <div className="text-2xl font-semibold tracking-[-0.04em]">{value}</div>
+      <div className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">{label}</div>
     </div>
   );
 }
@@ -275,7 +277,7 @@ function Game({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between text-sm text-zinc-500 dark:text-zinc-400">
+      <div className="flex items-center justify-between text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
         <span>{positionLabel}</span>
         <span>{scoreLabel}</span>
         <button
@@ -284,7 +286,7 @@ function Game({
             event.stopPropagation();
             onRestart();
           }}
-          className="underline underline-offset-2 hover:text-zinc-700 dark:hover:text-zinc-300"
+          className="border-b border-zinc-400 pb-0.5 hover:border-zinc-900 hover:text-zinc-900"
         >
           Restart
         </button>
@@ -294,11 +296,13 @@ function Game({
         onClick={() => {
           if (chosen) onAdvance();
         }}
-        className={`flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-zinc-200 p-8 text-center dark:border-zinc-800 ${
+        className={`relative flex min-h-[380px] flex-col items-center justify-center overflow-hidden border border-black/15 bg-[var(--paper)] p-8 text-center shadow-[8px_8px_0_var(--accent)] sm:p-12 ${
           chosen ? "cursor-pointer" : ""
         }`}
       >
-        <p className="text-3xl font-semibold">{card.noun}</p>
+        <span className="absolute right-5 top-5 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-400">noun / article</span>
+        <span className="absolute bottom-5 left-5 h-5 w-5 border-b border-l border-black/30" />
+        <p className="text-4xl font-bold tracking-[-0.06em] sm:text-5xl">{card.noun}</p>
 
         <div className="mt-8 grid w-full max-w-sm grid-cols-3 gap-3">
           {ARTICLES.map((article) => {
