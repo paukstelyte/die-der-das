@@ -21,11 +21,19 @@ function buildSeedDeck(): Flashcard[] {
     article: card.article,
     rule: card.rule,
     exception: card.exception,
+    origin: "seed",
     correctStreak: 0,
     incorrectStreak: 0,
     createdAt: now,
     updatedAt: now,
   }));
+}
+
+/** Backfills `origin` on cards saved before that field existed, inferring it
+ * from the deterministic `seed-N` id the pre-built deck uses. */
+function withOrigin(card: Flashcard): Flashcard {
+  if (card.origin) return card;
+  return { ...card, origin: card.id.startsWith("seed-") ? "seed" : "user" };
 }
 
 export function loadFlashcards(): Flashcard[] {
@@ -38,7 +46,7 @@ export function loadFlashcards(): Flashcard[] {
       return seeded;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.map(withOrigin) : [];
   } catch {
     return [];
   }

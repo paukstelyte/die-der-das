@@ -229,7 +229,7 @@ export default function Home() {
 
       <section className="grid grid-cols-3 gap-px border border-black/15 bg-black/15">
         <Stat label="Decks played" value={decksPlayed} />
-        <Stat label="Mistakes learned" value={mistakesLearned} />
+        <Stat label="Mistakes fixed" value={mistakesLearned} />
         <Stat
           label="Overall accuracy"
           value={

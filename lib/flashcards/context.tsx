@@ -29,6 +29,7 @@ export function FlashcardsProvider({ children }: { children: ReactNode }) {
           article: input.article,
           rule: input.rule,
           exception: input.exception,
+          origin: "user",
           correctStreak: 0,
           incorrectStreak: 0,
           createdAt: now,

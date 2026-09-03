@@ -11,8 +11,11 @@ export function shuffle<T>(list: T[]): T[] {
 
 export const ROUND_SIZE = 30;
 
-/** Needs-practice cards first, then new cards, then learned cards — each
- * group shuffled — trimmed down to one round's worth of cards. */
+/** Needs-practice cards first, then cards the user added themselves (so a
+ * newly added card surfaces in the very next deck instead of being diluted
+ * among the ~1,000 unplayed reference cards), then the rest of the unplayed
+ * reference deck, then learned cards — each group shuffled — trimmed down to
+ * one round's worth of cards. */
 export function buildPracticeOrder(
   cards: Flashcard[],
   roundSize: number = ROUND_SIZE,
@@ -21,8 +24,14 @@ export function buildPracticeOrder(
     (c) => getFlashcardStatus(c) === "needs-practice",
   );
   const isNew = cards.filter((c) => getFlashcardStatus(c) === "new");
+  const unplayed = cards.filter((c) => getFlashcardStatus(c) === "unplayed");
   const learned = cards.filter((c) => getFlashcardStatus(c) === "learned");
-  return [...shuffle(needsPractice), ...shuffle(isNew), ...shuffle(learned)]
+  return [
+    ...shuffle(needsPractice),
+    ...shuffle(isNew),
+    ...shuffle(unplayed),
+    ...shuffle(learned),
+  ]
     .slice(0, roundSize)
     .map((c) => c.id);
 }
