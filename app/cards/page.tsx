@@ -17,10 +17,16 @@ const STATUS_FILTERS: { value: FlashcardStatus | "all"; label: string }[] = [
 ];
 
 export default function CardsPage() {
-  const { cards } = useFlashcards();
+  const { cards, deleteCard } = useFlashcards();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<FlashcardStatus | "all">("all");
   const [visible, setVisible] = useState(PAGE_SIZE);
+
+  function handleDelete(id: string, label: string) {
+    if (window.confirm(`Delete "${label}"? This can't be undone.`)) {
+      deleteCard(id);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -101,10 +107,13 @@ export default function CardsPage() {
           ) : (
             <ul className="flex flex-col gap-2">
               {shown.map((card) => (
-                <li key={card.id}>
+                <li
+                  key={card.id}
+                  className="flex items-center gap-1 rounded-lg border border-zinc-200 pl-4 pr-2 transition-colors hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-900"
+                >
                   <Link
                     href={`/cards/${card.id}`}
-                    className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3 transition-colors hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-900"
+                    className="flex flex-1 items-center justify-between gap-3 py-3"
                   >
                     <span>
                       <span className="font-medium capitalize">
@@ -114,6 +123,32 @@ export default function CardsPage() {
                     </span>
                     <StatusBadge status={getFlashcardStatus(card)} />
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleDelete(card.id, `${card.article} ${card.noun}`)
+                    }
+                    aria-label={`Delete ${card.article} ${card.noun}`}
+                    title="Delete"
+                    className="shrink-0 rounded-full p-2 text-zinc-400 transition-colors hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 6h18" />
+                      <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                      <path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6" />
+                      <path d="M10 11v6" />
+                      <path d="M14 11v6" />
+                    </svg>
+                  </button>
                 </li>
               ))}
             </ul>
