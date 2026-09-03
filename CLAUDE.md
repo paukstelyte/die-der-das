@@ -12,9 +12,21 @@ The app's own display name/title is styled **die·der·das** (that word order, n
 
 ## Status
 
-Built. Pages: `/` (home — the practice game), `/rules` (rule reference), `/cards` (manage/search cards), `/cards/new`, `/cards/[id]` (detail/edit/delete).
+Built and working end to end. Pages: `/` (home — the practice game), `/rules` (rule reference), `/cards` (manage/search/delete cards), `/cards/new`, `/cards/[id]` (detail/edit/delete).
 
-The deck ships pre-seeded with `lib/flashcards/data/seed.json` (~1,000 cards), generated from the rule set in `lib/flashcards/data/rules.json` (also what powers the `/rules` page). Both were built from researched German grammar sources and a verified noun+gender dataset — see git history on `lib/flashcards/data/` before regenerating either file from scratch. The deck has also been through a CEFR-level curation pass (91%+ A1-B2, rest deliberately picked as the most everyday word available within an inherently formal rule family) — don't reintroduce obscure/technical/off-tone words when adding or regenerating entries; keep new additions at a comparable level.
+### Seed data (`lib/flashcards/data/`)
+
+The deck ships pre-seeded with `seed.json` (~1,000 cards, currently 996), generated from the rule set in `rules.json` (also what powers the `/rules` page). Both were built via background research agents from real German grammar sources and a Wiktionary-derived noun+gender dataset, then the deck went through a CEFR-level audit against official Goethe-Institut A1/A2/B1 word lists plus manual review (confirmed 91%+ A1-B2; the rest is the most everyday word available within an inherently formal rule family, e.g. -tum/-ismus vocab) — don't reintroduce obscure/technical/off-tone words when adding or regenerating entries.
+
+**Important**: the build script and raw source datasets (the 87k-entry noun+gender CSV, the frequency list, the CEFR word lists, the audit/replacement scripts) were never committed — they only ever existed in an ephemeral session scratchpad and are gone. `seed.json`/`rules.json` are the only durable output. Regenerating or meaningfully expanding the deck means re-sourcing data from scratch (e.g. a fresh Wiktionary-derived German noun+gender dataset), not looking for a pipeline in this repo.
+
+### Card `origin` and the "New" status
+
+Each `Flashcard` has `origin: "seed" | "user"`. `getFlashcardStatus` only reports `"new"` for `origin: "user"` cards; an unplayed seed/reference card reports `"unplayed"` instead (no badge shown for it) — this is deliberate, so the ~1,000-card reference deck never displays as "New". `buildPracticeOrder` prioritizes needs-practice → your new cards → unplayed reference cards → learned, so a freshly added card reliably lands in the very next deck instead of being diluted into the huge reference pool. `storage.ts` backfills `origin` on load for any card saved before this field existed (inferred from the `seed-N` id pattern) — don't remove that migration while old localStorage data might still be in use.
+
+### Visual design
+
+`app/globals.css` defines the design tokens (`--paper`, `--accent`, `--accent-deep`, `--ink-soft`, `--line`) for a fixed light "editorial/neo-brutalist" look (grid background, hard drop-shadows, Geist Sans). Dark-mode variables were intentionally removed in favor of this fixed aesthetic — most components (`app/page.tsx`, `NavBar`) were restyled to it; `app/cards/*` pages still use the earlier plain zinc/Tailwind-dark-mode styling and haven't been brought over to the new design system yet.
 
 ## Tech Stack (fixed)
 
@@ -36,7 +48,7 @@ npm run lint     # lint
 ## Webapp Requirements
 
 * At least two pages, including one detail page with its own address/route.
-* The user can create, edit, and delete flashcards (the nouns).
+* The user can create, edit, and delete flashcards (the nouns) — deletion works both from a card's detail page and directly from a row in the `/cards` list (with confirmation), so searching for a card and deleting it from the results works without opening the detail page.
 * The deck ships pre-populated (~1,000 cards covering the rules and exceptions on `/rules`) — adding your own cards is optional, never required to start playing.
 * A short description on how to use the app is shown somewhere in the UI.
 * Data created by the user persists across a full page reload (LocalStorage).
@@ -58,6 +70,7 @@ npm run lint     # lint
 
 * If instructions are unclear, ask for clarification — do not presume intent.
 * Keep the design clean.
+* Only commit/push when explicitly asked. `main` is the working branch and is pushed to `origin` directly (repo: `paukstelyte/die-der-das`), no PR workflow — short-lived feature branches (e.g. `design`) get created on request, merged back into `main`, and deleted once fully merged.
 
 ## Do Not
 
