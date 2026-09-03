@@ -1,13 +1,41 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useFlashcards } from "@/lib/flashcards/context";
-import { getFlashcardStatus } from "@/lib/flashcards/types";
+import { getFlashcardStatus, type FlashcardStatus } from "@/lib/flashcards/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState } from "@/components/EmptyState";
 
+const PAGE_SIZE = 150;
+
+const STATUS_FILTERS: { value: FlashcardStatus | "all"; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "new", label: "New" },
+  { value: "needs-practice", label: "Needs practice" },
+  { value: "learned", label: "Learned" },
+];
+
 export default function CardsPage() {
   const { cards } = useFlashcards();
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<FlashcardStatus | "all">("all");
+  const [visible, setVisible] = useState(PAGE_SIZE);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return cards
+      .filter((card) => {
+        if (status !== "all" && getFlashcardStatus(card) !== status) return false;
+        if (!q) return true;
+        return (
+          card.noun.toLowerCase().includes(q) || card.article.includes(q)
+        );
+      })
+      .sort((a, b) => a.noun.localeCompare(b.noun, "de"));
+  }, [cards, query, status]);
+
+  const shown = filtered.slice(0, visible);
 
   return (
     <div className="flex flex-col gap-6">
@@ -29,24 +57,78 @@ export default function CardsPage() {
           actionLabel="Add a flashcard"
         />
       ) : (
-        <ul className="flex flex-col gap-2">
-          {cards.map((card) => (
-            <li key={card.id}>
-              <Link
-                href={`/cards/${card.id}`}
-                className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3 transition-colors hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-900"
-              >
-                <span>
-                  <span className="font-medium capitalize">
-                    {card.article}
-                  </span>{" "}
-                  {card.noun}
-                </span>
-                <StatusBadge status={getFlashcardStatus(card)} />
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <input
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setVisible(PAGE_SIZE);
+              }}
+              placeholder="Search nouns…"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:border-zinc-400 sm:max-w-xs"
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {STATUS_FILTERS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    setStatus(option.value);
+                    setVisible(PAGE_SIZE);
+                  }}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                    status === option.value
+                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                      : "border border-zinc-300 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            {filtered.length} of {cards.length} card
+            {cards.length === 1 ? "" : "s"}
+          </p>
+
+          {filtered.length === 0 ? (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              No cards match “{query}”.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {shown.map((card) => (
+                <li key={card.id}>
+                  <Link
+                    href={`/cards/${card.id}`}
+                    className="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3 transition-colors hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-900"
+                  >
+                    <span>
+                      <span className="font-medium capitalize">
+                        {card.article}
+                      </span>{" "}
+                      {card.noun}
+                    </span>
+                    <StatusBadge status={getFlashcardStatus(card)} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {filtered.length > shown.length && (
+            <button
+              type="button"
+              onClick={() => setVisible((v) => v + PAGE_SIZE)}
+              className="self-center rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              Show more ({filtered.length - shown.length} remaining)
+            </button>
+          )}
+        </>
       )}
     </div>
   );

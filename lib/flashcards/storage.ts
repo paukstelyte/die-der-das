@@ -1,12 +1,42 @@
 import type { Flashcard } from "./types";
+import seedCards from "./data/seed.json";
 
 const STORAGE_KEY = "die-der-das:flashcards";
+
+interface SeedCard {
+  noun: string;
+  article: Flashcard["article"];
+  rule: string;
+  exception: string;
+}
+
+/** Builds the pre-prepared starter deck. Called only the very first time the
+ * app runs on a device (no localStorage key yet) — once saved, the user's
+ * own deck (including any deletions) takes over. */
+function buildSeedDeck(): Flashcard[] {
+  const now = new Date().toISOString();
+  return (seedCards as SeedCard[]).map((card, index) => ({
+    id: `seed-${index}`,
+    noun: card.noun,
+    article: card.article,
+    rule: card.rule,
+    exception: card.exception,
+    correctStreak: 0,
+    incorrectStreak: 0,
+    createdAt: now,
+    updatedAt: now,
+  }));
+}
 
 export function loadFlashcards(): Flashcard[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    if (raw === null) {
+      const seeded = buildSeedDeck();
+      saveFlashcards(seeded);
+      return seeded;
+    }
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
