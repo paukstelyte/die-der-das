@@ -75,41 +75,39 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col gap-10">
-      <section>
-        <h1 className="text-2xl font-semibold">der · die · das</h1>
-        <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-          A flashcard game for learning German noun articles — and the rules
-          (and exceptions) behind them.
-        </p>
-      </section>
+    <div className="grid gap-6 lg:grid-cols-[260px_1fr] lg:items-start">
+      <aside className="flex flex-col gap-4">
+        <div>
+          <h1 className="text-xl font-semibold">der · die · das</h1>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            Learn German noun articles and the rules behind them.
+          </p>
+        </div>
 
-      <section className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
-        <h2 className="font-semibold">How to use this app</h2>
-        <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-zinc-600 dark:text-zinc-400">
-          <li>
-            Guess der, die, or das for each noun. Each round is a deck of{" "}
-            {ROUND_SIZE} cards — once you finish it, a fresh deck of{" "}
-            {ROUND_SIZE} starts automatically and your score keeps counting.
-          </li>
-          <li>
-            After you answer, click anywhere to move to the next word — no
-            button needed. Every answer reveals the grammar rule behind it
-            (and any exception) — check{" "}
-            <Link href="/rules" className="underline underline-offset-2">
-              The Rules
-            </Link>{" "}
-            any time you want the full reference.
-          </li>
-          <li>
-            Get a card right twice in a row and it becomes{" "}
-            <strong>Learned</strong>; miss it twice in a row and it becomes{" "}
-            <strong>Needs practice</strong>.
-          </li>
-        </ol>
-      </section>
+        <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <h2 className="text-sm font-semibold">How to use</h2>
+          <ul className="mt-2 list-disc space-y-1.5 pl-4 text-xs text-zinc-600 dark:text-zinc-400">
+            <li>Guess der, die, or das, then click the card to flip it.</li>
+            <li>
+              Right twice in a row → <strong>Learned</strong>. Wrong twice →{" "}
+              <strong>Needs practice</strong>.
+            </li>
+            <li>
+              {ROUND_SIZE} cards per round, score keeps counting. Full
+              reference: <Link href="/rules" className="underline underline-offset-2">The Rules</Link>.
+            </li>
+          </ul>
+        </div>
 
-      <section>
+        <Link
+          href="/cards"
+          className="inline-flex items-center justify-center rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        >
+          Add your own cards
+        </Link>
+      </aside>
+
+      <div>
         {cards.length === 0 ? (
           <EmptyState
             title="No flashcards yet"
@@ -118,7 +116,7 @@ export default function Home() {
             actionLabel="Add a flashcard"
           />
         ) : !order || effectiveIndex >= order.length ? (
-          <div className="flex flex-col items-center gap-4 rounded-xl border border-zinc-200 p-8 text-center dark:border-zinc-800">
+          <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-zinc-200 p-8 text-center dark:border-zinc-800">
             <h2 className="text-xl font-semibold">Round complete!</h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Score so far: {session.correct}/{session.total}
@@ -144,16 +142,7 @@ export default function Home() {
             onAdvance={advance}
           />
         )}
-      </section>
-
-      <section>
-        <Link
-          href="/cards"
-          className="inline-flex items-center rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-        >
-          Add your own cards
-        </Link>
-      </section>
+      </div>
     </div>
   );
 }
@@ -182,12 +171,7 @@ function Game({
   const isCorrect = chosen === card.article;
 
   return (
-    <div
-      className="flex flex-col gap-6"
-      onClick={() => {
-        if (chosen) onAdvance();
-      }}
-    >
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between text-sm text-zinc-500 dark:text-zinc-400">
         <span>{positionLabel}</span>
         <span>{scoreLabel}</span>
@@ -203,68 +187,86 @@ function Game({
         </button>
       </div>
 
-      <div className="rounded-xl border border-zinc-200 p-10 text-center dark:border-zinc-800">
-        <p className="text-3xl font-semibold">{card.noun}</p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3">
-        {ARTICLES.map((article) => {
-          const isCorrectAnswer = article === card.article;
-          const isChosen = chosen === article;
-          let style = buttonIdle;
-          if (chosen) {
-            if (isCorrectAnswer) style = buttonCorrect;
-            else if (isChosen) style = buttonWrong;
-            else style = buttonMuted;
-          }
-          return (
-            <button
-              key={article}
-              type="button"
-              onClick={() => onChoose(article, card.id, card.article)}
-              className={`${buttonBase} ${style}`}
-            >
-              {article}
-            </button>
-          );
-        })}
-      </div>
-
-      {chosen && (
-        <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
-          <div className="flex items-center justify-between gap-3">
-            <p
-              className={`font-medium ${
-                isCorrect
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-red-600 dark:text-red-400"
-              }`}
-            >
-              {isCorrect
-                ? "Correct!"
-                : `Not quite — the answer is ${card.article} ${card.noun}.`}
-            </p>
-            <StatusBadge status={getFlashcardStatus(card)} />
-          </div>
-          <div>
-            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              Rule
-            </h2>
-            <p className="mt-1 text-sm">{card.rule}</p>
-          </div>
-          {card.exception && (
-            <div>
-              <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                Exception
-              </h2>
-              <p className="mt-1 text-sm">{card.exception}</p>
+      <div
+        onClick={() => {
+          if (chosen) onAdvance();
+        }}
+        className={`flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-zinc-200 p-8 text-center dark:border-zinc-800 ${
+          chosen ? "cursor-pointer" : ""
+        }`}
+      >
+        {!chosen ? (
+          <>
+            <p className="text-3xl font-semibold">{card.noun}</p>
+            <div className="mt-8 grid w-full max-w-sm grid-cols-3 gap-3">
+              {ARTICLES.map((article) => (
+                <button
+                  key={article}
+                  type="button"
+                  onClick={() => onChoose(article, card.id, card.article)}
+                  className={`${buttonBase} ${buttonIdle}`}
+                >
+                  {article}
+                </button>
+              ))}
             </div>
-          )}
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">
-            Click anywhere to continue →
-          </p>
-        </div>
-      )}
+          </>
+        ) : (
+          <div className="flex w-full flex-col gap-4">
+            <div className="grid grid-cols-3 gap-3">
+              {ARTICLES.map((article) => {
+                const isCorrectAnswer = article === card.article;
+                const isChosen = chosen === article;
+                let style = buttonMuted;
+                if (isCorrectAnswer) style = buttonCorrect;
+                else if (isChosen) style = buttonWrong;
+                return (
+                  <div key={article} className={`${buttonBase} ${style}`}>
+                    {article}
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="text-2xl font-semibold">
+              {card.article} {card.noun}
+            </p>
+
+            <div className="flex items-center justify-between gap-3">
+              <p
+                className={`text-sm font-medium ${
+                  isCorrect
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-red-600 dark:text-red-400"
+                }`}
+              >
+                {isCorrect ? "Correct!" : "Not quite."}
+              </p>
+              <StatusBadge status={getFlashcardStatus(card)} />
+            </div>
+
+            <div className="text-left">
+              <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                Rule
+              </h2>
+              <p className="mt-1 text-sm">{card.rule}</p>
+            </div>
+
+            {card.exception && (
+              <div className="text-left">
+                <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                  Exception
+                </h2>
+                <p className="mt-1 text-sm">{card.exception}</p>
+              </div>
+            )}
+
+            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+              Click anywhere to continue →
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
