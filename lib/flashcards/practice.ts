@@ -9,7 +9,7 @@ export function shuffle<T>(list: T[]): T[] {
   return result;
 }
 
-export const ROUND_SIZE = 50;
+export const ROUND_SIZE = 30;
 
 /** Needs-practice cards first, then new cards, then learned cards — each
  * group shuffled — trimmed down to one round's worth of cards. */

@@ -14,7 +14,7 @@ The app's own display name/title is styled **die·der·das** (that word order, n
 
 Built. Pages: `/` (home — the practice game), `/rules` (rule reference), `/cards` (manage/search cards), `/cards/new`, `/cards/[id]` (detail/edit/delete).
 
-The deck ships pre-seeded with `lib/flashcards/data/seed.json` (~1,000 cards), generated from the rule set in `lib/flashcards/data/rules.json` (also what powers the `/rules` page). Both were built from researched German grammar sources and a verified noun+gender dataset — see git history on `lib/flashcards/data/` before regenerating either file from scratch.
+The deck ships pre-seeded with `lib/flashcards/data/seed.json` (~1,000 cards), generated from the rule set in `lib/flashcards/data/rules.json` (also what powers the `/rules` page). Both were built from researched German grammar sources and a verified noun+gender dataset — see git history on `lib/flashcards/data/` before regenerating either file from scratch. The deck has also been through a CEFR-level curation pass (91%+ A1-B2, rest deliberately picked as the most everyday word available within an inherently formal rule family) — don't reintroduce obscure/technical/off-tone words when adding or regenerating entries; keep new additions at a comparable level.
 
 ## Tech Stack (fixed)
 
@@ -45,7 +45,10 @@ npm run lint     # lint
 ## Flashcard Game Interaction Requirements
 
 * Layout must be usable and responsive.
-* The game plays in fixed-size rounds (50 cards). A card answered incorrectly is re-queued and replayed at the end of that round (repeating until every card in the round has been answered correctly) before a new round starts. A running session score (correct/total) is tracked across rounds and shown during play.
+* The game plays in fixed-size rounds/decks (30 cards) that always end after exactly 30, regardless of mistakes. At round end, the player gets an explicit, optional choice: "Learn from your mistakes" (a recap pass of just the cards missed that round — recap also ends after those cards and offers the same choice again if any are still missed) or "Next N words" (skip the recap, start a fresh deck). Never auto-loop into a recap. A newly created card must be eligible for the very next round (this already falls out of rebuilding the round from the live card list whenever a new round starts — don't cache/snapshot the card list at round start in a way that would exclude it).
+* The score shown during play and on the round-complete screen ("This deck: X/Y") is scoped to the current deck only and resets to 0/0 every new deck — it is not a running session total. Recap-pass answers don't count toward it.
+* The Restart button gives a fresh deck AND resets the session-wide stats below (see next bullet); finishing a deck normally via "Next N words" only resets the per-deck score and leaves the session-wide stats accumulating.
+* The bottom of the home page shows session-wide stats: **Decks played** (increments once per completed base deck, not per recap pass), **Mistakes learned** (a card missed in a base round that was subsequently answered correctly during a recap pass), and **Overall accuracy %** (computed from base-deck answers only, explicitly excluding recap-pass answers).
 * Each card is a flip, not a multi-step form: the front shows the noun and the der/die/das buttons; picking one flips the same box in place to reveal the correct answer (highlighted green, with a wrong pick highlighted red) plus the rule and any exception — no separate reveal panel below it, no "next" button. Clicking anywhere on the flipped card advances to the next one.
 * A flashcard is automatically classified as "already learned" or "still needs practice" after 2 correct or 2 incorrect answers in a row, and shown via a status badge — but this mechanic is not explained in the on-screen instructions (kept out of the "how to use" copy intentionally).
 * Flashcard answers show the grammar rule that explains why the answer is correct. Exceptions to rules are explained as well, not just the base rule.

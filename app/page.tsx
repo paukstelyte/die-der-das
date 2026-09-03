@@ -20,7 +20,7 @@ const buttonWrong =
 const buttonMuted =
   "border-zinc-200 text-zinc-400 dark:border-zinc-800 dark:text-zinc-600";
 
-interface SessionScore {
+interface RoundScore {
   correct: number;
   total: number;
 }
@@ -28,25 +28,36 @@ interface SessionScore {
 export default function Home() {
   const { cards, recordAnswer } = useFlashcards();
   const [round, setRound] = useState(0);
-  const [redoQueue, setRedoQueue] = useState<string[] | null>(null);
+  const [recapQueue, setRecapQueue] = useState<string[] | null>(null);
   const [wrongThisPass, setWrongThisPass] = useState<string[]>([]);
-  const [isRedo, setIsRedo] = useState(false);
+  const [isRecap, setIsRecap] = useState(false);
   const [index, setIndex] = useState(0);
   const [chosen, setChosen] = useState<Article | null>(null);
-  const [session, setSession] = useState<SessionScore>({ correct: 0, total: 0 });
+  // Score for the current deck only — resets every new deck. Recap answers
+  // don't count toward it, since a recap isn't itself "a deck of 30".
+  const [deckScore, setDeckScore] = useState<RoundScore>({ correct: 0, total: 0 });
+  // Session-wide stats shown at the bottom of the page — persist across
+  // decks and are only reset by the Restart button.
+  const [decksPlayed, setDecksPlayed] = useState(0);
+  const [mistakesLearned, setMistakesLearned] = useState(0);
+  // Accuracy tracked from base-round answers only, excluding "learn from
+  // your mistakes" recap passes.
+  const [baseStats, setBaseStats] = useState<RoundScore>({ correct: 0, total: 0 });
 
-  // Rebuilds only when the round counter changes (explicit restart) or once
-  // cards first become available after localStorage hydrates — not on every
-  // card mutation (e.g. answering shouldn't reshuffle the current round).
+  // Rebuilds only when the round counter changes (explicit restart, or
+  // "Next N words") or once cards first become available after localStorage
+  // hydrates — not on every card mutation (e.g. answering shouldn't reshuffle
+  // the current round). Any card added since the last rebuild is picked up
+  // automatically, since this always reads the live `cards` array.
   const hasCards = cards.length > 0;
   const baseOrder = useMemo(
     () => (hasCards ? buildPracticeOrder(cards) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [round, hasCards],
   );
-  // A redo queue (the cards missed in the previous pass) overrides the base
+  // An optional recap queue (the cards missed last round) overrides the base
   // round until it's cleared by starting a fresh round.
-  const queue = redoQueue ?? baseOrder;
+  const queue = recapQueue ?? baseOrder;
 
   // Skip past any id whose card was deleted mid-round, computed at render
   // time rather than stored, so there's nothing to keep in sync.
@@ -59,11 +70,34 @@ export default function Home() {
     effectiveIndex++;
   }
 
-  function nextRound() {
+  function startFreshDeck() {
     setRound((r) => r + 1);
-    setRedoQueue(null);
+    setRecapQueue(null);
     setWrongThisPass([]);
-    setIsRedo(false);
+    setIsRecap(false);
+    setIndex(0);
+    setChosen(null);
+    setDeckScore({ correct: 0, total: 0 });
+  }
+
+  /** "Next N words" — starts a fresh deck, session-wide stats keep counting. */
+  function nextRound() {
+    startFreshDeck();
+  }
+
+  /** The Restart button — starts a fresh deck AND resets the session-wide
+   * stats shown at the bottom of the page. */
+  function restart() {
+    startFreshDeck();
+    setDecksPlayed(0);
+    setMistakesLearned(0);
+    setBaseStats({ correct: 0, total: 0 });
+  }
+
+  function startRecap() {
+    setRecapQueue(wrongThisPass);
+    setWrongThisPass([]);
+    setIsRecap(true);
     setIndex(0);
     setChosen(null);
   }
@@ -73,10 +107,18 @@ export default function Home() {
     setChosen(article);
     const wasCorrect = article === correctArticle;
     recordAnswer(cardId, wasCorrect);
-    setSession((s) => ({
-      correct: s.correct + (wasCorrect ? 1 : 0),
-      total: s.total + 1,
-    }));
+    if (isRecap) {
+      if (wasCorrect) setMistakesLearned((m) => m + 1);
+    } else {
+      setDeckScore((s) => ({
+        correct: s.correct + (wasCorrect ? 1 : 0),
+        total: s.total + 1,
+      }));
+      setBaseStats((s) => ({
+        correct: s.correct + (wasCorrect ? 1 : 0),
+        total: s.total + 1,
+      }));
+    }
     if (!wasCorrect) {
       setWrongThisPass((prev) => [...prev, cardId]);
     }
@@ -84,24 +126,19 @@ export default function Home() {
 
   function advance() {
     const newIndex = effectiveIndex + 1;
-    // Pass finished (last card just answered) — if anything was missed,
-    // loop straight into a redo pass of just those cards instead of ending.
-    if (queue && newIndex >= queue.length && wrongThisPass.length > 0) {
-      setRedoQueue(wrongThisPass);
-      setWrongThisPass([]);
-      setIndex(0);
-      setIsRedo(true);
-    } else {
-      setIndex(newIndex);
+    if (queue && newIndex >= queue.length && !isRecap) {
+      setDecksPlayed((d) => d + 1);
     }
+    setIndex(newIndex);
     setChosen(null);
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[260px_1fr] lg:items-start">
+    <div className="flex flex-col gap-8">
+      <div className="grid gap-6 lg:grid-cols-[260px_1fr] lg:items-start">
       <aside className="flex flex-col gap-4">
         <div>
-          <h1 className="text-xl font-semibold">der · die · das</h1>
+          <h1 className="text-xl font-semibold">die · der · das</h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
             Learn German noun articles and the rules behind them.
           </p>
@@ -112,12 +149,11 @@ export default function Home() {
           <ul className="mt-2 list-disc space-y-1.5 pl-4 text-xs text-zinc-600 dark:text-zinc-400">
             <li>Guess der, die, or das, then click the card to flip it.</li>
             <li>
-              Get one wrong and it comes back at the end of the round for
-              another try.
+              After {ROUND_SIZE} cards, choose to learn from your mistakes or
+              jump to the next deck. Score keeps counting.
             </li>
             <li>
-              {ROUND_SIZE} cards per round, score keeps counting. Full
-              reference: <Link href="/rules" className="underline underline-offset-2">The Rules</Link>.
+              Full reference: <Link href="/rules" className="underline underline-offset-2">The Rules</Link>.
             </li>
           </ul>
         </div>
@@ -140,36 +176,76 @@ export default function Home() {
           />
         ) : !queue || effectiveIndex >= queue.length ? (
           <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-zinc-200 p-8 text-center dark:border-zinc-800">
-            <h2 className="text-xl font-semibold">Round complete!</h2>
+            <h2 className="text-xl font-semibold">
+              {isRecap ? "Recap complete!" : "Round complete!"}
+            </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Score so far: {session.correct}/{session.total}
-              {session.total > 0 &&
-                ` (${Math.round((session.correct / session.total) * 100)}%)`}
+              This deck: {deckScore.correct}/{deckScore.total}
+              {deckScore.total > 0 &&
+                ` (${Math.round((deckScore.correct / deckScore.total) * 100)}%)`}
             </p>
-            <button
-              type="button"
-              onClick={nextRound}
-              className="inline-flex items-center rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-            >
-              Next {ROUND_SIZE} words →
-            </button>
+            <div className="flex flex-wrap justify-center gap-3">
+              {wrongThisPass.length > 0 && (
+                <button
+                  type="button"
+                  onClick={startRecap}
+                  className="inline-flex items-center rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+                >
+                  Learn from your mistakes ({wrongThisPass.length})
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={nextRound}
+                className={`inline-flex items-center rounded-full px-5 py-2.5 text-sm font-medium transition-colors ${
+                  wrongThisPass.length > 0
+                    ? "border border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    : "bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+                }`}
+              >
+                Next {ROUND_SIZE} words →
+              </button>
+            </div>
           </div>
         ) : (
           <Game
             cardId={queue[effectiveIndex]}
             positionLabel={
-              isRedo
-                ? `Redo ${effectiveIndex + 1} of ${queue.length}`
+              isRecap
+                ? `Recap ${effectiveIndex + 1} of ${queue.length}`
                 : `Card ${effectiveIndex + 1} of ${queue.length}`
             }
-            scoreLabel={`Score ${session.correct}/${session.total}`}
+            scoreLabel={`Score ${deckScore.correct}/${deckScore.total}`}
             chosen={chosen}
-            onRestart={nextRound}
+            onRestart={restart}
             onChoose={choose}
             onAdvance={advance}
           />
         )}
       </div>
+      </div>
+
+      <section className="grid grid-cols-3 gap-3">
+        <Stat label="Decks played" value={decksPlayed} />
+        <Stat label="Mistakes learned" value={mistakesLearned} />
+        <Stat
+          label="Overall accuracy"
+          value={
+            baseStats.total > 0
+              ? `${Math.round((baseStats.correct / baseStats.total) * 100)}%`
+              : "—"
+          }
+        />
+      </section>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-xl border border-zinc-200 p-4 text-center dark:border-zinc-800">
+      <div className="text-2xl font-semibold">{value}</div>
+      <div className="text-xs text-zinc-500 dark:text-zinc-400">{label}</div>
     </div>
   );
 }
