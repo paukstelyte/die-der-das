@@ -19,7 +19,7 @@ export function NavBar() {
           href="/"
           className="font-semibold text-zinc-900 dark:text-zinc-50"
         >
-          der·die·das
+          die·der·das
         </Link>
         <ul className="flex gap-1">
           {LINKS.map((link) => {

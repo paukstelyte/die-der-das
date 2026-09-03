@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useFlashcards } from "@/lib/flashcards/context";
 import { ARTICLES, getFlashcardStatus, type Article } from "@/lib/flashcards/types";
 import { buildPracticeOrder, ROUND_SIZE } from "@/lib/flashcards/practice";
+import { formatRuleText } from "@/lib/flashcards/ruleFormatting";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -27,6 +28,9 @@ interface SessionScore {
 export default function Home() {
   const { cards, recordAnswer } = useFlashcards();
   const [round, setRound] = useState(0);
+  const [redoQueue, setRedoQueue] = useState<string[] | null>(null);
+  const [wrongThisPass, setWrongThisPass] = useState<string[]>([]);
+  const [isRedo, setIsRedo] = useState(false);
   const [index, setIndex] = useState(0);
   const [chosen, setChosen] = useState<Article | null>(null);
   const [session, setSession] = useState<SessionScore>({ correct: 0, total: 0 });
@@ -35,25 +39,31 @@ export default function Home() {
   // cards first become available after localStorage hydrates — not on every
   // card mutation (e.g. answering shouldn't reshuffle the current round).
   const hasCards = cards.length > 0;
-  const order = useMemo(
+  const baseOrder = useMemo(
     () => (hasCards ? buildPracticeOrder(cards) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [round, hasCards],
   );
+  // A redo queue (the cards missed in the previous pass) overrides the base
+  // round until it's cleared by starting a fresh round.
+  const queue = redoQueue ?? baseOrder;
 
   // Skip past any id whose card was deleted mid-round, computed at render
   // time rather than stored, so there's nothing to keep in sync.
   let effectiveIndex = index;
   while (
-    order &&
-    effectiveIndex < order.length &&
-    !cards.some((c) => c.id === order[effectiveIndex])
+    queue &&
+    effectiveIndex < queue.length &&
+    !cards.some((c) => c.id === queue[effectiveIndex])
   ) {
     effectiveIndex++;
   }
 
   function nextRound() {
     setRound((r) => r + 1);
+    setRedoQueue(null);
+    setWrongThisPass([]);
+    setIsRedo(false);
     setIndex(0);
     setChosen(null);
   }
@@ -67,10 +77,23 @@ export default function Home() {
       correct: s.correct + (wasCorrect ? 1 : 0),
       total: s.total + 1,
     }));
+    if (!wasCorrect) {
+      setWrongThisPass((prev) => [...prev, cardId]);
+    }
   }
 
   function advance() {
-    setIndex(effectiveIndex + 1);
+    const newIndex = effectiveIndex + 1;
+    // Pass finished (last card just answered) — if anything was missed,
+    // loop straight into a redo pass of just those cards instead of ending.
+    if (queue && newIndex >= queue.length && wrongThisPass.length > 0) {
+      setRedoQueue(wrongThisPass);
+      setWrongThisPass([]);
+      setIndex(0);
+      setIsRedo(true);
+    } else {
+      setIndex(newIndex);
+    }
     setChosen(null);
   }
 
@@ -89,8 +112,8 @@ export default function Home() {
           <ul className="mt-2 list-disc space-y-1.5 pl-4 text-xs text-zinc-600 dark:text-zinc-400">
             <li>Guess der, die, or das, then click the card to flip it.</li>
             <li>
-              Right twice in a row → <strong>Learned</strong>. Wrong twice →{" "}
-              <strong>Needs practice</strong>.
+              Get one wrong and it comes back at the end of the round for
+              another try.
             </li>
             <li>
               {ROUND_SIZE} cards per round, score keeps counting. Full
@@ -115,7 +138,7 @@ export default function Home() {
             actionHref="/cards/new"
             actionLabel="Add a flashcard"
           />
-        ) : !order || effectiveIndex >= order.length ? (
+        ) : !queue || effectiveIndex >= queue.length ? (
           <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-zinc-200 p-8 text-center dark:border-zinc-800">
             <h2 className="text-xl font-semibold">Round complete!</h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -133,8 +156,12 @@ export default function Home() {
           </div>
         ) : (
           <Game
-            cardId={order[effectiveIndex]}
-            positionLabel={`Card ${effectiveIndex + 1} of ${order.length}`}
+            cardId={queue[effectiveIndex]}
+            positionLabel={
+              isRedo
+                ? `Redo ${effectiveIndex + 1} of ${queue.length}`
+                : `Card ${effectiveIndex + 1} of ${queue.length}`
+            }
             scoreLabel={`Score ${session.correct}/${session.total}`}
             chosen={chosen}
             onRestart={nextRound}
@@ -195,11 +222,12 @@ function Game({
           chosen ? "cursor-pointer" : ""
         }`}
       >
-        {!chosen ? (
-          <>
-            <p className="text-3xl font-semibold">{card.noun}</p>
-            <div className="mt-8 grid w-full max-w-sm grid-cols-3 gap-3">
-              {ARTICLES.map((article) => (
+        <p className="text-3xl font-semibold">{card.noun}</p>
+
+        <div className="mt-8 grid w-full max-w-sm grid-cols-3 gap-3">
+          {ARTICLES.map((article) => {
+            if (!chosen) {
+              return (
                 <button
                   key={article}
                   type="button"
@@ -208,30 +236,23 @@ function Game({
                 >
                   {article}
                 </button>
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="flex w-full flex-col gap-4">
-            <div className="grid grid-cols-3 gap-3">
-              {ARTICLES.map((article) => {
-                const isCorrectAnswer = article === card.article;
-                const isChosen = chosen === article;
-                let style = buttonMuted;
-                if (isCorrectAnswer) style = buttonCorrect;
-                else if (isChosen) style = buttonWrong;
-                return (
-                  <div key={article} className={`${buttonBase} ${style}`}>
-                    {article}
-                  </div>
-                );
-              })}
-            </div>
+              );
+            }
+            const isCorrectAnswer = article === card.article;
+            const isWrongChoice = chosen === article && !isCorrectAnswer;
+            let style = buttonMuted;
+            if (isCorrectAnswer) style = buttonCorrect;
+            else if (isWrongChoice) style = buttonWrong;
+            return (
+              <div key={article} className={`${buttonBase} ${style}`}>
+                {article}
+              </div>
+            );
+          })}
+        </div>
 
-            <p className="text-2xl font-semibold">
-              {card.article} {card.noun}
-            </p>
-
+        {chosen && (
+          <div className="mt-6 flex w-full flex-col gap-4">
             <div className="flex items-center justify-between gap-3">
               <p
                 className={`text-sm font-medium ${
@@ -249,7 +270,7 @@ function Game({
               <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
                 Rule
               </h2>
-              <p className="mt-1 text-sm">{card.rule}</p>
+              <p className="mt-1 text-sm">{formatRuleText(card.rule)}</p>
             </div>
 
             {card.exception && (
@@ -257,7 +278,7 @@ function Game({
                 <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
                   Exception
                 </h2>
-                <p className="mt-1 text-sm">{card.exception}</p>
+                <p className="mt-1 text-sm">{formatRuleText(card.exception)}</p>
               </div>
             )}
 

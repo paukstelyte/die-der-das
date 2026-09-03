@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "der·die·das — German article flashcards",
+  title: "die·der·das — German article flashcards",
   description:
     "A flashcard game for learning and practicing German noun articles.",
 };

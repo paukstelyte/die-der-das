@@ -1,4 +1,5 @@
 import rules from "@/lib/flashcards/data/rules.json";
+import { formatRuleText } from "@/lib/flashcards/ruleFormatting";
 
 interface RuleException {
   noun: string;
@@ -27,7 +28,7 @@ const ARTICLE_STYLES: Record<Rule["article"], string> = {
 };
 
 export const metadata = {
-  title: "The Rules — der·die·das",
+  title: "The Rules — die·der·das",
 };
 
 export default function RulesPage() {
@@ -93,7 +94,7 @@ function RuleCard({ rule }: { rule: Rule }) {
       </div>
 
       <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
-        {rule.description}
+        {formatRuleText(rule.description)}
       </p>
 
       <div className="mt-4">
@@ -124,7 +125,7 @@ function RuleCard({ rule }: { rule: Rule }) {
                   {exception.article} {exception.noun.replace(/^(der|die|das)\s+/i, "")}
                 </span>{" "}
                 <span className="text-zinc-600 dark:text-zinc-400">
-                  — {exception.note}
+                  — {formatRuleText(exception.note)}
                 </span>
               </li>
             ))}
