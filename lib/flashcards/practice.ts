@@ -9,14 +9,20 @@ export function shuffle<T>(list: T[]): T[] {
   return result;
 }
 
-/** Needs-practice cards first, then new cards, then learned cards — each group shuffled. */
-export function buildPracticeOrder(cards: Flashcard[]): string[] {
+export const ROUND_SIZE = 50;
+
+/** Needs-practice cards first, then new cards, then learned cards — each
+ * group shuffled — trimmed down to one round's worth of cards. */
+export function buildPracticeOrder(
+  cards: Flashcard[],
+  roundSize: number = ROUND_SIZE,
+): string[] {
   const needsPractice = cards.filter(
     (c) => getFlashcardStatus(c) === "needs-practice",
   );
   const isNew = cards.filter((c) => getFlashcardStatus(c) === "new");
   const learned = cards.filter((c) => getFlashcardStatus(c) === "learned");
-  return [...shuffle(needsPractice), ...shuffle(isNew), ...shuffle(learned)].map(
-    (c) => c.id,
-  );
+  return [...shuffle(needsPractice), ...shuffle(isNew), ...shuffle(learned)]
+    .slice(0, roundSize)
+    .map((c) => c.id);
 }
