@@ -15,7 +15,6 @@ const STATUS_FILTERS: { value: FlashcardStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
   { value: "new", label: "New" },
   { value: "needs-practice", label: "Needs practice" },
-  { value: "learned", label: "Learned" },
 ];
 
 export default function CardsPage() {

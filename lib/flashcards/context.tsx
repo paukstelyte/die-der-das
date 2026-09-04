@@ -30,7 +30,6 @@ export function FlashcardsProvider({ children }: { children: ReactNode }) {
           rule: input.rule,
           exception: input.exception,
           origin: "user",
-          correctStreak: 0,
           incorrectStreak: 0,
           createdAt: now,
           updatedAt: now,
@@ -56,7 +55,6 @@ export function FlashcardsProvider({ children }: { children: ReactNode }) {
             card.id === id
               ? {
                   ...card,
-                  correctStreak: wasCorrect ? card.correctStreak + 1 : 0,
                   incorrectStreak: wasCorrect ? 0 : card.incorrectStreak + 1,
                   updatedAt: new Date().toISOString(),
                 }

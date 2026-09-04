@@ -17,7 +17,7 @@ The deck ships pre-seeded with `seed.json` (~1,000 cards, currently 996), genera
 
 ### Card `origin` and the "New" status
 
-Each `Flashcard` has `origin: "seed" | "user"`. `getFlashcardStatus` only reports `"new"` for `origin: "user"` cards; an unplayed seed/reference card reports `"unplayed"` instead (no badge shown for it) — this is deliberate, so the ~1,000-card reference deck never displays as "New". `buildPracticeOrder` prioritizes needs-practice → your new cards → unplayed reference cards → learned, so a freshly added card reliably lands in the very next deck instead of being diluted into the huge reference pool. `storage.ts` backfills `origin` on load for any card saved before this field existed (inferred from the `seed-N` id pattern) — don't remove that migration while old localStorage data might still be in use.
+Each `Flashcard` has `origin: "seed" | "user"`. `getFlashcardStatus` only reports `"new"` for `origin: "user"` cards; an unplayed seed/reference card reports `"unplayed"` instead (no badge shown for it) — this is deliberate, so the ~1,000-card reference deck never displays as "New". `buildPracticeOrder` prioritizes needs-practice → your new cards → unplayed reference cards, so a freshly added card reliably lands in the very next deck instead of being diluted into the huge reference pool. `storage.ts` backfills `origin` on load for any card saved before this field existed (inferred from the `seed-N` id pattern) — don't remove that migration while old localStorage data might still be in use.
 
 ### Visual design
 
@@ -49,7 +49,7 @@ The app runs locally at `localhost:3000`. Do not swap any part of this stack.
 * The score shown during play and on the round-complete screen ("This deck: X/Y") is scoped to the current deck only and resets to 0/0 every new deck
 * The Restart button gives a fresh deck AND resets the session-wide stats
 Clicking anywhere on the flipped card advances to the next one.
-* A flashcard is automatically classified as "already learned" or "still needs practice" after 2 correct or 2 incorrect answers in a row, and shown via a status badge — but this mechanic is not explained in the on-screen instructions (
+* A flashcard is automatically classified as "still needs practice" after 2 incorrect answers in a row, and shown via a status badge — but this mechanic is not explained in the on-screen instructions (there's no "already learned" classification; it wasn't doing anything useful and was removed).
 
 * Flashcard answers show the grammar rule that explains why the answer is correct. Exceptions to rules are explained as well, not just the base rule.
 * On both a flashcard's rule text and the `/rules` reference page, the specific suffix/prefix a rule hinges on (e.g. **-ung**, **Ge-**) is bolded wherever it appears in the explanation.

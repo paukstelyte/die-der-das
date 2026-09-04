@@ -22,7 +22,6 @@ function buildSeedDeck(): Flashcard[] {
     rule: card.rule,
     exception: card.exception,
     origin: "seed",
-    correctStreak: 0,
     incorrectStreak: 0,
     createdAt: now,
     updatedAt: now,
