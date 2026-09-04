@@ -60,6 +60,7 @@ The app runs locally at `localhost:3000`. Do not swap any part of this stack.
 
 - If instructions are unclear, ask me for clarification, don't make assumptions 
 - Keep the design clean and conscise througout pages
+- Keep this repo in sync with the Turing College submission repo (`TuringCollegeSubmissions/eglepp-AFA.BAI.1.8`, cloned as a sibling directory: `../eglepp-AFA.BAI.1.8`): after pushing changes here, mirror the same tracked files there and push too. `REFLECTION.md` stays untracked (gitignored) here but must stay tracked there — don't carry that `.gitignore` line over when syncing.
 
 ## Do Not
 
