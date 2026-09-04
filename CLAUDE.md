@@ -43,16 +43,18 @@ The app runs locally at `localhost:3000`. Do not swap any part of this stack.
 
 ## Flashcard Game Interaction Requirements
 
-* Layout must be usable and responsive.
-* The game plays in fixed-size rounds/decks (30 cards). At round end, the player can replay the previous mistakes or proceed to the next deck.
- A newly created card must be eligible for the very next round 
-* The score shown during play and on the round-complete screen ("This deck: X/Y") is scoped to the current deck only and resets to 0/0 every new deck
-* The Restart button gives a fresh deck AND resets the session-wide stats
-Clicking anywhere on the flipped card advances to the next one.
-* A flashcard is automatically classified as "still needs practice" after 2 incorrect answers in a row, and shown via a status badge — but this mechanic is not explained in the on-screen instructions (there's no "already learned" classification; it wasn't doing anything useful and was removed).
-
-* Flashcard answers show the grammar rule that explains why the answer is correct. Exceptions to rules are explained as well, not just the base rule.
-* On both a flashcard's rule text and the `/rules` reference page, the specific suffix/prefix a rule hinges on (e.g. **-ung**, **Ge-**) is bolded wherever it appears in the explanation.
+* Layout is responsive: sidebar + game panel on desktop, stacked on mobile.
+* Rounds are fixed at 30 cards and always run to completion regardless of mistakes.
+* At round end: "Learn from your mistakes (N)" (recap of just this round's misses, itself capped to those cards) or "Next 30 words" (fresh deck) — never auto-loops into recap.
+* A newly added card is eligible for the very next round (the round rebuilds from the live card set each time).
+* "This deck: X/Y" score is scoped to the current deck only and resets every new deck; recap answers don't count toward it.
+* Restart gives a fresh deck and resets session-wide stats; "Next 30 words" only resets the per-deck score.
+* Session-wide stats (bottom of home page): Decks played, Mistakes fixed (a base-round miss later answered correctly in recap), Overall accuracy % (base-deck answers only).
+* Each card is a flip: the noun + der/die/das buttons on the front; picking one flips it in place (correct green, wrong red) to reveal the rule and any exception — no separate panel, no "next" button.
+* Click anywhere on a flipped card to advance.
+* A card is auto-flagged "needs practice" after 2 wrong answers in a row (shown as a badge) — not explained in the on-screen "how to use" copy.
+* Every answer shows the grammar rule; exceptions are explained too, not just the base rule.
+* The specific suffix/prefix a rule hinges on (e.g. **-ung**, **Ge-**) is bolded wherever it appears, on both the flashcard and the `/rules` page.
 
 ## Working Rules
 
