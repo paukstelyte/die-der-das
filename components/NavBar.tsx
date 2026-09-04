@@ -13,7 +13,7 @@ export function NavBar() {
   const pathname = usePathname();
 
   return (
-    <header className="border-b border-black/15 bg-[var(--paper)]">
+    <header className="border-b border-black/15 bg-[var(--paper)] print:hidden">
       <nav className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4 sm:px-8">
         <Link
           href="/"

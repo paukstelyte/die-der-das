@@ -6,6 +6,8 @@ import { useFlashcards } from "@/lib/flashcards/context";
 import { getFlashcardStatus, type FlashcardStatus } from "@/lib/flashcards/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState } from "@/components/EmptyState";
+import { downloadCardsCsv } from "@/lib/flashcards/export";
+import { DownloadIcon } from "@/components/DownloadIcon";
 
 const PAGE_SIZE = 150;
 
@@ -45,14 +47,24 @@ export default function CardsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Manage cards</h1>
-        <Link
-          href="/cards/new"
-          className="inline-flex items-center rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-        >
-          Add flashcard
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => downloadCardsCsv(cards)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            <DownloadIcon />
+            Export CSV
+          </button>
+          <Link
+            href="/cards/new"
+            className="inline-flex items-center rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+          >
+            Add flashcard
+          </Link>
+        </div>
       </div>
 
       {cards.length === 0 ? (

@@ -1,5 +1,6 @@
 import rules from "@/lib/flashcards/data/rules.json";
 import { formatRuleText } from "@/lib/flashcards/ruleFormatting";
+import { PrintButton } from "@/components/PrintButton";
 
 interface RuleException {
   noun: string;
@@ -27,6 +28,22 @@ const ARTICLE_STYLES: Record<Rule["article"], string> = {
   das: "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300",
 };
 
+const ARTICLE_LABELS: Record<Rule["article"], string> = {
+  der: "masculine",
+  die: "feminine",
+  das: "neuter",
+};
+
+function truncate(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  return `${cut.slice(0, cut.lastIndexOf(" "))}…`;
+}
+
+function bareNoun(noun: string): string {
+  return noun.replace(/^(der|die|das)\s+/i, "");
+}
+
 export const metadata = {
   title: "The Rules — die·der·das",
 };
@@ -36,9 +53,16 @@ export default function RulesPage() {
   for (const rule of typedRules) groups[rule.article].push(rule);
 
   return (
-    <div className="flex flex-col gap-10">
+    <>
+    <div className="flex flex-col gap-10 print:hidden">
       <section>
-        <h1 className="text-2xl font-semibold">The Rules</h1>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h1 className="text-2xl font-semibold">The Rules</h1>
+          <PrintButton
+            label="Export rules (PDF)"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          />
+        </div>
         <div className="mt-3 flex flex-col gap-3 text-sm text-zinc-600 dark:text-zinc-400">
           <p>
             Every German noun has a grammatical gender — masculine (
@@ -70,6 +94,55 @@ export default function RulesPage() {
           <div className="flex flex-col gap-4">
             {groups[article].map((rule) => (
               <RuleCard key={rule.id} rule={rule} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+    <PrintRules groups={groups} />
+    </>
+  );
+}
+
+function PrintRules({ groups }: { groups: Record<Rule["article"], Rule[]> }) {
+  return (
+    <div className="hidden print:block">
+      {(["der", "die", "das"] as const).map((article, index) => (
+        <section
+          key={article}
+          className={index < 2 ? "break-after-page" : undefined}
+        >
+          <header className="mb-3 flex items-baseline justify-between border-b-2 border-black pb-1.5">
+            <h2 className="text-base font-bold capitalize">
+              {article}{" "}
+              <span className="font-normal text-zinc-500">
+                ({ARTICLE_LABELS[article]})
+              </span>
+            </h2>
+            <span className="text-[9px] text-zinc-400">
+              die·der·das — rules reference
+            </span>
+          </header>
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2.5">
+            {groups[article].map((rule) => (
+              <div key={rule.id} className="break-inside-avoid text-[7.5pt] leading-snug">
+                <p className="font-semibold">{rule.title}</p>
+                <p className="text-zinc-700">{truncate(rule.description, 105)}</p>
+                <p className="mt-0.5 text-zinc-800">
+                  <span className="font-medium">Ex: </span>
+                  {rule.examples.slice(0, 5).join(", ")}
+                </p>
+                {rule.exceptions.length > 0 && (
+                  <p className="text-zinc-500">
+                    <span className="font-medium">Exc: </span>
+                    {rule.exceptions
+                      .slice(0, 4)
+                      .map((exception) => `${exception.article} ${bareNoun(exception.noun)}`)
+                      .join(", ")}
+                    {rule.exceptions.length > 4 ? "…" : ""}
+                  </p>
+                )}
+              </div>
             ))}
           </div>
         </section>

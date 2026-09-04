@@ -42,3 +42,15 @@ input:focus-visible {
   outline: 2px solid var(--foreground);
   outline-offset: 3px;
 }
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  body {
+    background: white;
+    background-image: none;
+  }
+}

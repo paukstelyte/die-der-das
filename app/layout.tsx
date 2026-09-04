@@ -29,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col text-zinc-900">
         <FlashcardsProvider>
           <NavBar />
-          <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-8 sm:px-8 sm:py-12">
+          <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-8 sm:px-8 sm:py-12 print:max-w-none print:p-0">
             {children}
           </main>
         </FlashcardsProvider>
