@@ -19,7 +19,7 @@ Each `Flashcard` has `origin: "seed" | "user"`. `getFlashcardStatus` only report
 
 ### Visual design
 
-`app/globals.css` defines the design tokens (`--paper`, `--accent`, `--accent-deep`, `--ink-soft`, `--line`) for a fixed light "editorial/neo-brutalist" look (grid background, hard drop-shadows, Geist Sans). 
+`app/globals.css` defines the design tokens (`--paper`, `--accent`, `--accent-deep`, `--ink-soft`, `--line`) for an "editorial/neo-brutalist" look (grid background, hard drop-shadows, Geist Sans), with light and dark variants of each token. A round toggle button in `NavBar` (`components/ThemeToggle.tsx`) switches between them; the choice is persisted in `localStorage` and read via `lib/theme/context.tsx`. Tailwind's `dark:` variant is retargeted in `globals.css` (`@custom-variant dark`) to key off the `data-theme` attribute on `<html>` rather than OS preference, so components should keep using ordinary `dark:` utility classes.
 
 ## Tech Stack (fixed)
 
