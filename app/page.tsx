@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useFlashcards } from "@/lib/flashcards/context";
 import { ARTICLES, getFlashcardStatus, type Article } from "@/lib/flashcards/types";
-import { buildPracticeOrder, ROUND_SIZE } from "@/lib/flashcards/practice";
+import { ROUND_SIZE } from "@/lib/flashcards/practice";
+import { usePracticeSession } from "@/lib/flashcards/usePracticeSession";
 import { formatRuleText } from "@/lib/flashcards/ruleFormatting";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState } from "@/components/EmptyState";
@@ -20,118 +20,35 @@ const buttonWrong =
 const buttonMuted =
   "border-zinc-200 text-zinc-400 dark:border-zinc-800 dark:text-zinc-600";
 
-interface RoundScore {
-  correct: number;
-  total: number;
+function getArticleButtonStyle(isCorrectAnswer: boolean, isWrongChoice: boolean) {
+  if (isCorrectAnswer) return buttonCorrect;
+  if (isWrongChoice) return buttonWrong;
+  return buttonMuted;
 }
+
+const pillPrimary =
+  "bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white";
+const pillSecondary =
+  "border border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800";
 
 export default function Home() {
   const { cards, recordAnswer } = useFlashcards();
-  const [round, setRound] = useState(0);
-  const [recapQueue, setRecapQueue] = useState<string[] | null>(null);
-  const [wrongThisPass, setWrongThisPass] = useState<string[]>([]);
-  const [isRecap, setIsRecap] = useState(false);
-  const [index, setIndex] = useState(0);
-  const [chosen, setChosen] = useState<Article | null>(null);
-  // Score for the current deck only — resets every new deck. Recap answers
-  // don't count toward it, since a recap isn't itself "a deck of 30".
-  const [deckScore, setDeckScore] = useState<RoundScore>({ correct: 0, total: 0 });
-  // Session-wide stats shown at the bottom of the page — persist across
-  // decks and are only reset by the Restart button.
-  const [decksPlayed, setDecksPlayed] = useState(0);
-  const [mistakesLearned, setMistakesLearned] = useState(0);
-  // Accuracy tracked from base-round answers only, excluding "learn from
-  // your mistakes" recap passes.
-  const [baseStats, setBaseStats] = useState<RoundScore>({ correct: 0, total: 0 });
-
-  // Rebuilds only when the round counter changes (explicit restart, or
-  // "Next N words") or once cards first become available after localStorage
-  // hydrates — not on every card mutation (e.g. answering shouldn't reshuffle
-  // the current round). Any card added since the last rebuild is picked up
-  // automatically, since this always reads the live `cards` array.
-  const hasCards = cards.length > 0;
-  const baseOrder = useMemo(
-    () => (hasCards ? buildPracticeOrder(cards) : null),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [round, hasCards],
-  );
-  // An optional recap queue (the cards missed last round) overrides the base
-  // round until it's cleared by starting a fresh round.
-  const queue = recapQueue ?? baseOrder;
-
-  // Skip past any id whose card was deleted mid-round, computed at render
-  // time rather than stored, so there's nothing to keep in sync.
-  let effectiveIndex = index;
-  while (
-    queue &&
-    effectiveIndex < queue.length &&
-    !cards.some((c) => c.id === queue[effectiveIndex])
-  ) {
-    effectiveIndex++;
-  }
-
-  function startFreshDeck() {
-    setRound((r) => r + 1);
-    setRecapQueue(null);
-    setWrongThisPass([]);
-    setIsRecap(false);
-    setIndex(0);
-    setChosen(null);
-    setDeckScore({ correct: 0, total: 0 });
-  }
-
-  /** "Next N words" — starts a fresh deck, session-wide stats keep counting. */
-  function nextRound() {
-    startFreshDeck();
-  }
-
-  /** The Restart button — starts a fresh deck AND resets the session-wide
-   * stats shown at the bottom of the page. */
-  function restart() {
-    startFreshDeck();
-    setDecksPlayed(0);
-    setMistakesLearned(0);
-    setBaseStats({ correct: 0, total: 0 });
-  }
-
-  function startRecap() {
-    setRecapQueue(wrongThisPass);
-    setWrongThisPass([]);
-    setIsRecap(true);
-    setIndex(0);
-    setChosen(null);
-  }
-
-  function choose(article: Article, cardId: string, correctArticle: Article) {
-    if (chosen) return;
-    setChosen(article);
-    const wasCorrect = article === correctArticle;
-    recordAnswer(cardId, wasCorrect);
-    if (isRecap) {
-      if (wasCorrect) setMistakesLearned((m) => m + 1);
-    } else {
-      setDeckScore((s) => ({
-        correct: s.correct + (wasCorrect ? 1 : 0),
-        total: s.total + 1,
-      }));
-      setBaseStats((s) => ({
-        correct: s.correct + (wasCorrect ? 1 : 0),
-        total: s.total + 1,
-      }));
-    }
-    if (!wasCorrect) {
-      setWrongThisPass((prev) => [...prev, cardId]);
-    }
-  }
-
-  function advance() {
-    const newIndex = effectiveIndex + 1;
-    if (queue && newIndex >= queue.length && !isRecap) {
-      setDecksPlayed((d) => d + 1);
-    }
-    setIndex(newIndex);
-    setChosen(null);
-  }
+  const {
+    queue,
+    effectiveIndex,
+    chosen,
+    isRecap,
+    deckScore,
+    decksPlayed,
+    mistakesLearned,
+    baseStats,
+    wrongThisPass,
+    choose,
+    advance,
+    nextRound,
+    restart,
+    startRecap,
+  } = usePracticeSession(cards, recordAnswer);
 
   return (
     <div className="flex flex-col gap-10">
@@ -191,7 +108,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={startRecap}
-                  className="inline-flex items-center rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+                  className={`inline-flex items-center rounded-full px-5 py-2.5 text-sm font-medium transition-colors ${pillPrimary}`}
                 >
                   Learn from your mistakes ({wrongThisPass.length})
                 </button>
@@ -200,9 +117,7 @@ export default function Home() {
                 type="button"
                 onClick={nextRound}
                 className={`inline-flex items-center rounded-full px-5 py-2.5 text-sm font-medium transition-colors ${
-                  wrongThisPass.length > 0
-                    ? "border border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                    : "bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+                  wrongThisPass.length > 0 ? pillSecondary : pillPrimary
                 }`}
               >
                 Next {ROUND_SIZE} words →
@@ -320,9 +235,7 @@ function Game({
             }
             const isCorrectAnswer = article === card.article;
             const isWrongChoice = chosen === article && !isCorrectAnswer;
-            let style = buttonMuted;
-            if (isCorrectAnswer) style = buttonCorrect;
-            else if (isWrongChoice) style = buttonWrong;
+            const style = getArticleButtonStyle(isCorrectAnswer, isWrongChoice);
             return (
               <div key={article} className={`${buttonBase} ${style}`}>
                 {article}

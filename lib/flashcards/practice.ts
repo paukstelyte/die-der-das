@@ -1,5 +1,24 @@
 import { getFlashcardStatus, type Flashcard } from "./types";
 
+/** Skips past any id in `queue` whose card no longer exists (e.g. deleted
+ * mid-round), computed on demand rather than stored, so there's nothing to
+ * keep in sync when the card list changes. */
+export function resolveEffectiveIndex(
+  queue: string[] | null,
+  cards: Flashcard[],
+  index: number,
+): number {
+  let effectiveIndex = index;
+  while (
+    queue &&
+    effectiveIndex < queue.length &&
+    !cards.some((c) => c.id === queue[effectiveIndex])
+  ) {
+    effectiveIndex++;
+  }
+  return effectiveIndex;
+}
+
 export function shuffle<T>(list: T[]): T[] {
   const result = [...list];
   for (let i = result.length - 1; i > 0; i--) {
